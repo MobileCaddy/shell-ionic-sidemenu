@@ -1,8 +1,8 @@
-# MobileCaddy Shell App - Angular/Ionic
+# MobileCaddy Shell Side Menu App
 
 ## Overview
 
-This is the basic shell application built with [Angular JS](https://angularjs.org/) and the [Ionic Framework](http://ionicframework.com). The idea of the MobileCaddy shell applications are to give developers a barebones starting block in getting building hybrid mobile applications with MobileCaddy.
+This is the basic side menu shell application built with [Angular JS](https://angularjs.org/) and the [Ionic Framework](http://ionicframework.com). The idea of the MobileCaddy shell applications are to give developers a barebones starting block in getting building hybrid mobile applications with MobileCaddy.
 
 ## Getting Started
 
@@ -14,11 +14,11 @@ This is the basic shell application built with [Angular JS](https://angularjs.or
  * sass
 
 
-* Download the [zip](https://github.com/MobileCaddy/shell-ionic/archive/master.zip) and unzip
+* Download the [zip](https://github.com/MobileCaddy/shell-ionic-sidemenu/archive/master.zip) and unzip
 
 ```
-mv shell-ionic-master shell-ionic
-cd shell-ionic
+mv shell-ionic-sidemenu-master shell-ionic-sidemenu
+cd shell-ionic-sidemenu
 ```
 
 ## What you get (prior to running any installs/grunt tasks)
