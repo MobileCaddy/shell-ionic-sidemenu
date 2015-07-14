@@ -35,72 +35,91 @@ angular.module('starter', ['ionic', 'starter.services', 'starter.controllers'])
   // Each state's controller can be found in controllers.js
   $stateProvider
 
-    // setup an abstract state for the tabs directive
-    .state('tab', {
-      url: "/tab",
+    // setup an abstract state for the app
+    .state('app', {
+      url: "/app",
       abstract: true,
-      templateUrl: RESOURCE_ROOT +  'templates/tabsMain.html'
+      templateUrl: RESOURCE_ROOT +  'templates/menu.html'
     })
 
+    // the app home page
+    .state('app.home', {
+      url: '/home',
+      views: {
+        'menuContent': {
+          templateUrl: RESOURCE_ROOT + 'templates/home.html'
+        }
+      }
+    })
 
-    /** ***************************************************
+    // contacts
+    .state('app.contacts', {
+      url: '/contacts',
+      views: {
+        'menuContent': {
+          templateUrl: RESOURCE_ROOT + 'templates/contacts.html'
+        }
+      }
+    })
+
+    /*****************************************************
      * S E T T I N G S    &    D E V    T O O L S
-     *************************************************** */
+     ****************************************************/
 
-    .state('tab.settings', {
+    .state('app.settings', {
       url: '/settings',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settings.html',
           controller: 'SettingsCtrl'
         }
       }
     })
 
-    .state('tab.settings-devtools', {
+    .state('app.settings-devtools', {
       url: '/settings/devtools',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settingsDevTools.html',
           controller: 'SettingsCtrl'
         }
       }
     })
 
-    .state('tab.settings-mti', {
+    .state('app.settings-mti', {
       url: '/settings/mti',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settingsDevMTI.html',
           controller: 'MTICtrl'
         }
       }
     })
 
-    .state('tab.mti-detail', {
+    .state('app.mti-detail', {
       url: '/settings/mti/:tableName',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settingsDevMTIDetail.html',
           controller: 'MTIDetailCtrl'
         }
       }
     })
 
-    .state('tab.settings-testing', {
+    .state('app.settings-testing', {
       url: '/settings/testing',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settingsTesting.html',
           controller: 'TestingCtrl'
         }
       }
     })
 
-    .state('tab.settings-deploy', {
+    .state('app.settings-deploy', {
       url: '/settings/deploy',
       views: {
-        'settings-tab': {
+        'menuContent': {
           templateUrl: RESOURCE_ROOT +  'templates/settingsDeploy.html',
           controller: 'DeployCtrl'
         }
@@ -109,14 +128,12 @@ angular.module('starter', ['ionic', 'starter.services', 'starter.controllers'])
 
   // ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !
   //
-  //    A H O Y     H O Y     ! ! !
-  //
-  //    Change this to call you home page/tab/etc
-  //    At the moment it points to the MobileCaddy Settings tab
+  //    Change this to call your home/start page.
+  //    At the moment it points to a dummy home page.
   //
   // ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !  ! ! ! ! !
   // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/tab/settings');
+  $urlRouterProvider.otherwise('/app/home');
 
 }]);
 
