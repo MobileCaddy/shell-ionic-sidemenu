@@ -106,7 +106,7 @@ angular.module('starter.controllers', ['ionic'])
   $scope.showAdminPasswordPopup = function() {
     var adminTimeout = (1000 * 60 * 5); // 5 minutes
     if ( $rootScope.adminLoggedIn > Date.now() - adminTimeout) {
-      $location.path('tab/settings/devtools');
+      $location.path('app/settings/devtools');
       $rootScope.adminLoggedIn = Date.now();
       $scope.$apply();
     } else {
@@ -121,7 +121,7 @@ angular.module('starter.controllers', ['ionic'])
             type: 'button-positive',
             onTap: function(e) {
             if (validateAdminPassword($scope.data.admin)) {
-                $location.path('tab/settings/devtools');
+                $location.path('app/settings/devtools');
                 $rootScope.adminLoggedIn = Date.now();
               } else {
                 console.log("Password incorrect");
@@ -195,12 +195,12 @@ angular.module('starter.controllers', ['ionic'])
   var adminTimeout = (1000 * 60 *5 ); // 5 minutes
   if ( $rootScope.adminLoggedIn > Date.now() - adminTimeout) {
   } else {
-    $location.url('tab/settings');
+    $location.url('app/settings');
     var alertPopup = $ionicPopup.alert({
       title: 'Access Denied'
     });
     alertPopup.then(function(res) {
-      //$location.url('tab/settings');
+      //$location.url('app/settings');
       $scope.$apply();
     });
   }
