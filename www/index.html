@@ -15,7 +15,8 @@
     <link href="css/app.css" rel="stylesheet">
 
     <!-- ionic/angularjs/promise polyfill scripts -->
-    <script src="lib/js/ionic.bundle.min.js"></script>
+    <script src="../bower_components/ionic/release/js/ionic.bundle.js"></script>
+    <script src="lib/js/angular-ios9-uiwebview.patch.js"></script>
     <script src="../bower_components/underscore/underscore-min.js"></script>
     <script src="../bower_components/es6-promise/index.js"></script>
 
@@ -91,10 +92,10 @@
       mobileCaddy.userOverride              = '005200000013F2vAAE';
       mobileCaddy.audId                     = 'a2eR0000000Jv6xIAC';
       mobileCaddy.startPageURL              = 'http://dummy.mobileCaddy.net';
-      mobileCaddy.sysDataVersion            = '002';
+      mobileCaddy.sysDataVersion            = '001';
       mobileCaddy.sysDataPlatSupVersion     = '001';
       mobileCaddy.versionUtilsVersion       = '001';
-      mobileCaddy.dynVersionNumber          = '006';
+      mobileCaddy.dynVersionNumber          = '001';
       mobileCaddy.syncRefreshVersion        = '001';
 
       SupportMc.singleton.startUp(function(runUpInfo) {

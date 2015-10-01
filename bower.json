@@ -1,11 +1,11 @@
 {
   "name": "mobilecaddy-shell-ionic-sidemenu",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/MobileCaddy/shell-ionic-sidemenu",
   "authors": [
     "toddhalfpenny <todd@mobilecaddy.net>"
   ],
-  "description": "MobileCaddy Shell app using Angular and Ionic",
+  "description": "MobileCaddy Side Menu Shell app using Angular and Ionic",
   "license": "MIT",
   "private": true,
   "ignore": [
@@ -16,12 +16,12 @@
     "tests"
   ],
   "devDependencies": {
-    "ionic": "1.0.1",
-    "mobilecaddy-codeflow": "https://github.com/MobileCaddy/codeflow/archive/unstable-0.0.1-alpha.5.zip",
-    "mobilecaddy-utils": "https://github.com/MobileCaddy/mobilecaddy-utils/archive/unstable-0.0.1-alpha.6.zip",
+    "ionic": "1.1.0",
+    "mobilecaddy-codeflow": "0.0.2",
+    "mobilecaddy-utils": "0.0.2",
     "ngCordova": "https://github.com/toddhalfpenny/ng-cordova.git#add-localNotification-mocks",
     "jszip": "Stuk/jszip#~2.4.0",
     "jszip-utils": "Stuk/jszip-utils#~0.0.2",
-    "angular-mocks": "#1.3.13"
+    "angular-mocks": "1.4.3"
   }
 }
