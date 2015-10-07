@@ -1,3 +1,19 @@
+### 0.0.3 (2015-10-04)
+
+
+#### Bug Fixes
+
+*
+
+#### Features
+
+* Replace bower deps with matching NPM ones.
+
+#### Breaking Changes
+
+* none
+
+
 ### 0.0.2 (2015-09-16)
 
 
