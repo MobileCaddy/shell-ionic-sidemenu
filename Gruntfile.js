@@ -173,6 +173,12 @@ module.exports = function(grunt) {
           {
             src: ['node_modules/mobilecaddy-codeflow/node_modules/forcejs/oauthcallback.html'],
             dest: 'oauthcallback.html'
+          },
+          {
+            expand: true,
+            cwd: 'node_modules/mobilecaddy-codeflow/codeflow-app/',
+            src: ['**'],
+            dest: 'codeflow'
           }
         ]
       }
