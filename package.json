@@ -25,7 +25,7 @@
     "grunt-include-source": "^0.7.0",
     "grunt-karma": "^0.10.1",
     "grunt-text-replace": "^0.4.0",
-    "ionic-sdk": "^1.1.0",
+    "ionic-sdk": "git+https://github.com/driftyco/ionic.git#v1.1.1",
     "jasmine-core": "^2.2.0",
     "jszip": "git+https://github.com/Stuk/jszip.git#bcfe0352bfd0d3c93251b68eaebe77109e34a25f",
     "jszip-utils": "0.0.2",

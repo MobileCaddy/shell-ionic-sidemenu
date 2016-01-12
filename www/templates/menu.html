@@ -1,32 +1,60 @@
-  <ion-side-menus enable-menu-with-back-views="false">
+<ion-side-menus enable-menu-with-back-views="true">
   <ion-side-menu-content>
-    <ion-nav-bar class="bar-positive">
+    <ion-nav-bar class="bar-light">
       <ion-nav-back-button>
       </ion-nav-back-button>
       <ion-nav-buttons side="left">
-        <button class="button button-icon button-clear ion-navicon" menu-toggle="left" ng-hide="$exposeAside.active">
+        <button class="button button-icon button-clear ion-navicon" menu-toggle="left">
         </button>
       </ion-nav-buttons>
     </ion-nav-bar>
     <ion-nav-view name="menuContent"></ion-nav-view>
   </ion-side-menu-content>
 
-  <ion-side-menu side="left" expose-aside-when="large">
-    <ion-header-bar class="bar-assertive">
-      <h1 class="title">Menu</h1>
+  <ion-side-menu side="left" ng-class="{'shell-side-menu':!vm.selectedItem}">
+    <ion-header-bar ng-class="{'shell-side-menu':!vm.selectedItem}">
+      <a ng-show="!vm.selectedItem"
+         ng-href="#/app/home"
+         class="item-icon-left shell-side-menu"
+         style="text-decoration: none;font-size:16px;padding-top: 8px;"
+         menu-close>
+        <i class="icon ion-ios-home"></i>
+        Home
+      </a>
+      <button ng-click="vm.goBack()" ng-show="vm.selectedItem" class="button button-icon icon ion-ios-arrow-back">
+        <span style="color: #009C36">{{vm.selectedItem.name}}</span>
+      </button>
     </ion-header-bar>
     <ion-content>
       <ion-list>
-        <ion-item menu-close href="#/app/home">
-          Home
-        </ion-item>
-        <ion-item menu-close href="#/app/contacts">
-          Contacts
-        </ion-item>
-        <ion-item menu-close href="#/app/settings">
-          Settings
-        </ion-item>
+        <div ng-repeat="item in vm.items">
+          <a ng-if="!item.node"
+             ng-click="vm.showSubmenu(item)"
+             class="item {{item.icon ? 'item-icon-left' : ''}} {{item.parentid==0 ? 'shell-side-menu' : 'shell-side-submenu'}}">
+            <i ng-if="item.icon" class="icon {{item.icon}}"></i>
+            {{item.name}}
+          </a>
+          <a ng-if="item.node"
+             class="item {{item.icon ? 'item-icon-left' : ''}} {{item.parentid==0 ? 'shell-side-menu' : 'shell-side-submenu'}}"
+             ng-href="{{item.href}}"
+             menu-close>
+            <i ng-if="item.icon" class="icon {{item.icon}}"></i>
+            {{item.name}}
+          </a>
+        </div>
       </ion-list>
     </ion-content>
+    <div ng-show="!vm.selectedItem" class="bar bar-subfooter" ng-class="{'shell-side-menu':!vm.selectedItem}" style="padding-top: 10px;">
+      <a ng-href="#/app/home"
+         class="item-icon-left shell-side-menu"
+         style="text-decoration: none;font-size:16px;padding-left: 40px;"
+         menu-close>
+        <i class="icon ion-ios-arrow-forward"></i>
+        Legal notices
+      </a>
+    </div>
+    <ion-footer-bar ng-show="!vm.selectedItem" ng-class="{'shell-side-menu':!vm.selectedItem}">
+      <div>© 2015 MobileCaddy, All rights reserved.</div>
+    </ion-footer-bar>
   </ion-side-menu>
 </ion-side-menus>
