@@ -6,9 +6,58 @@
 (function() {
   'use strict';
 
-  angular.module('starter.controllers', ['ionic']);
+  angular.module('starter.controllers', ['ionic'])
+
+      .directive('mcSyncSpinner', function($rootScope, SyncService, NetworkService, $window) {
+        return {
+          restrict: 'E',
+          scope: {},
+          link: function(scope){
+            var curSyncState = SyncService.getSyncState();
+            if (curSyncState == 'Complete' || curSyncState ==  "InitialLoadComplete") {
+              var networkState = NetworkService.getNetworkStatus();
+              scope.syncState = networkState;
+            } else {
+              scope.syncState = "syncing";
+            }
+
+            var deregisterHandleSyncTables = $rootScope.$on('syncTables', function(event, args) {
+              if (args && args.result) {
+                var syncInfo = args.result.toString();
+                console.log("syncInfo", syncInfo);
+                if (syncInfo == 'Complete' || syncInfo ==  "InitialLoadComplete") {
+                  var networkState = NetworkService.getNetworkStatus();
+                  scope.syncState = networkState;
+                  scope.$apply();
+                } else if (scope.syncState !== "syncing") {
+                  console.log("scope.syncState = 'syncing'");
+                  scope.syncState = "syncing";
+                  scope.$apply();
+                } else {
+                  console.log("scope.syncState == 'syncing'");
+                }
+              }
+            });
+
+            var deregisterHandleNetworkState = $rootScope.$on('networkState', function(event, args) {
+              var networkState = args.state.toString();
+              console.log("networkState", networkState);
+              scope.syncState = networkState;
+              scope.$apply();
+            });
+
+            scope.$on('$destroy',
+                deregisterHandleSyncTables,
+                deregisterHandleNetworkState
+            );
+          },
+          templateUrl: $window.RESOURCE_ROOT + 'templates/mcSyncSpinner.html'
+        };
+      });
 
 })();
+
+
 /**
  * Deploy Controller
  *
@@ -21,9 +70,9 @@
     .module('starter.controllers')
     .controller('DeployCtrl', DeployCtrl);
 
-  DeployCtrl.$inject = [];
+  DeployCtrl.$inject = ['$scope', 'DeployService'];
 
-  function DeployCtrl() {
+  function DeployCtrl($scope, DeployService) {
 
 
 	  function iconForErr(errType) {
@@ -303,6 +352,128 @@
 
 })();
 /**
+ * Outbox Controller
+ *
+ * @description controller for outbox page.
+ */
+(function() {
+  'use strict';
+
+  angular
+    .module('starter.controllers')
+    .controller('OutboxCtrl', OutboxCtrl);
+
+  OutboxCtrl.$inject = ['$rootScope', '$scope', '$ionicLoading', '$timeout', 'logger', 'OutboxService', 'SyncService', 'NetworkService', 'UserService'];
+
+  function OutboxCtrl($rootScope, $scope, $ionicLoading, $timeout, logger, OutboxService, SyncService, NetworkService, UserService)  {
+    logger.log("in OutboxCtrl");
+
+    var outboxControllerViewModel = this;
+    var updateOutboxCountTimeout;
+
+    outboxControllerViewModel.dirtyRecordExist = false;
+    outboxControllerViewModel.syncing = false;
+
+    // Methods used in view
+    outboxControllerViewModel.syncNow = syncNow;
+
+    activate();
+
+    function activate() {
+      $ionicLoading.show({
+        duration: 5000,
+        template: 'Loading...',
+        animation: 'fade-in',
+        showBackdrop: true
+      });
+      // get the dirty records
+      OutboxService.getDirtyRecords().then(function(records) {
+        if (records.length === 0) {
+          // If no dirty records then show the 'No records...' message
+          outboxControllerViewModel.dirtyRecordExist = false;
+          outboxControllerViewModel.outboxCount = "";
+        } else {
+          // Update count in this view's title (the count next to the Outbox menu item is updated by raising event 'MenuCtrl:updateOutboxCount')
+          outboxControllerViewModel.outboxCount = records.length > 0 ? " (" + records.length + ")" : "";
+          outboxControllerViewModel.dirtyRecords = buildDisplayRecords(records);
+          // Show the Sync Now button
+          outboxControllerViewModel.dirtyRecordExist = true;
+        }
+        $ionicLoading.hide();
+        updateOutboxCountTimeout = $timeout(function() {
+          // Update the outbox count displayed in the side menu (updated in MenuCtrl)
+          $rootScope.$emit('MenuCtrl:updateOutboxCount');
+        },0);
+      });
+    }
+
+    // Build the records to display in view
+    function buildDisplayRecords(records) {
+      // Count number of dirty records for each mobile table name
+      var counts = _.countBy(records, 'Mobile_Table_Name');
+      // Build data to display in view
+      var dirtyRecords = _.map(counts, function(value, key){
+        // Map a more user fiendly name to the mobile table name
+        var displayTableName;
+        switch (key) {
+          // Add lines below like this for each table you're interested in
+          // case "myDummyTable1__ap" :
+          //   displayTableName = "Table 1";
+          //   break;
+          // case "myDummyTable1__ap" :
+          //   displayTableName = "Table 2";
+            // break;
+          default :
+            // Won't come in here unless a new mobile table has been mobilised for the app, and not catered for in switch
+            displayTableName = key;
+        }
+        return {
+            "displayTableName": displayTableName,
+            "mobileTableName": key,
+            "count": value
+        };
+      });
+      return dirtyRecords;
+    }
+
+    // Run the sync method in the MenuCtrl
+    function syncNow() {
+      if (NetworkService.getNetworkStatus() === "online") {
+        $rootScope.$emit('MenuCtrl:syncNow');
+        outboxControllerViewModel.syncing = true;
+      } else {
+        outboxControllerViewModel.syncing = false;
+        $ionicLoading.show({
+          template: 'Please go on-line before attempting to sync',
+          animation: 'fade-in',
+          showBackdrop: true,
+          duration: 2000
+        });
+      }
+    }
+
+    // Process events fired from the SyncService
+    var deregisterHandleSyncTables = $rootScope.$on('syncTables', function(event, args) {
+      logger.log("OutboxCtrl syncTables: " + JSON.stringify(args));
+      if (args.result.toString() == "Complete") {
+        // Refresh this view after sync is complete
+        activate();
+        outboxControllerViewModel.syncing = false;
+      }
+    });
+
+
+    $scope.$on('$destroy', function() {
+      logger.log("OutboxCtrl destroy");
+      deregisterHandleSyncTables();
+      $timeout.cancel(updateOutboxCountTimeout);
+    });
+
+  }
+
+})();
+
+/**
  * Settings Controller
  *
  * @description Controller for the settings area
@@ -314,9 +485,85 @@
     .module('starter.controllers')
     .controller('SettingsCtrl', SettingsCtrl);
 
-  SettingsCtrl.$inject = ['$scope', '$rootScope', '$ionicPopup', '$ionicLoading', '$location', 'devUtils', 'vsnUtils', 'DevService', 'logger'];
+	SettingsCtrl.$inject = ['$scope', '$rootScope', '$ionicPopup', '$ionicLoading', '$location', 'devUtils', 'vsnUtils', 'DevService', 'logger', 'SyncService', 'NetworkService', '$timeout', 'OutboxService'];
 
-  function SettingsCtrl($scope, $rootScope, $ionicPopup, $ionicLoading, $location, devUtils, vsnUtils, DevService, logger) {
+	function SettingsCtrl($scope, $rootScope, $ionicPopup, $ionicLoading, $location, devUtils, vsnUtils, DevService, logger, SyncService, NetworkService, $timeout, OutboxService) {
+
+		/**
+		 * Sync Now Stuff For Sync Now Button On Settings Page
+		 *
+         */
+
+		$scope.outboxCount = '';
+		function syncNow() {
+			if (NetworkService.getNetworkStatus() === "online") {
+				var syncTimeout = $timeout(function () {
+					SyncService.syncAllTablesNow();
+				}, 0);
+			} else {
+				$ionicLoading.show({
+					template: 'Please go on-line before attempting to sync',
+					animation: 'fade-in',
+					showBackdrop: true,
+					duration: 2500
+				});
+			}
+		}
+
+		function updateOutboxCount() {
+			OutboxService.getDirtyRecordsCount().then(function(result) {
+				$scope.outboxCount = result > 0 ? " (" + result + ")" : "";
+			});
+		}
+
+		var deregisterHandleUpdateOutboxCount = $rootScope.$on('MenuCtrl:updateOutboxCount', function(event, args) {
+			updateOutboxCount();
+		});
+
+		var deregisterHandleSyncNow = $rootScope.$on('MenuCtrl:syncNow', function(event, args) {
+			syncNow();
+		});
+
+		/**
+		 * @event on syncTables
+		 * @description Handle events fired from the SyncService.
+		 */
+		var deregisterHandleSyncTables = $rootScope.$on('syncTables', function(event, args) {
+			// logger.log("MenuCtrl syncTables: " + JSON.stringify(args));
+			if (args && args.result) {
+				if (args.result.toString() == "Complete") {
+					updateOutboxCount();
+				}
+			}
+		});
+
+		$scope.$on('$destroy', function() {
+			$timeout.cancel(syncTimeout);
+			deregisterHandleSyncTables();
+			deregisterHandleUpdateOutboxCount();
+			deregisterHandleSyncNow();
+		});
+
+
+		/**
+		 * SyncNow Service To Sync Current Data
+		 */
+
+		var syncTimeout;
+		$scope.syncNow = function () {
+			if (NetworkService.getNetworkStatus() === "online") {
+				syncTimeout = $timeout(function() {
+					SyncService.syncAllTablesNow();
+				}, 0);
+			} else {
+				$ionicLoading.show({
+					template: 'Please go on-line before attempting to sync',
+					animation: 'fade-in',
+					showBackdrop: true,
+					duration: 2500
+				});
+			}
+		};
 
 
 	  /*
@@ -341,9 +588,14 @@
 	  vsnUtils.upgradeAvailable().then(function(res){
 	    if (res)  return devUtils.dirtyTables();
 	  }).then(function(tables){
-	    if (tables && tables.length === 0) {
+	  	var tables2 = tables.filter(function(table){
+	  		return table != "Mobile_Log__mc";
+	  	});
+	    if (tables2 && tables2.length === 0) {
 	      $scope.upgradeAvailable = true;
-	      $scope.$apply();
+				$timeout(function() {
+          $scope.$apply();
+        }, 0);
 	    }
 	  });
 
@@ -565,6 +817,7 @@
   }
 
 })();
+
 /**
  * Testing Controller
  *

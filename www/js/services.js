@@ -141,8 +141,8 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
   DeployService.$inject = ['$rootScope', '$q', '$timeout', '$http'];
 
   function DeployService($rootScope, $q, $timeout, $http) {
-		var apiVersion = "v32.0";
-
+		var apiVersionInt = 32;
+		var apiVersion = "v" + 32 + ".0";
 
 	  return {
 	    getDetails : getDetails,
@@ -314,52 +314,40 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
 	          dataParsed = dataParsed.replace(/MY_APP_FILE_LIST/g, cacheEntriesStr);
 	          delete $rootScope.deployFiles;
 
-	          doesPageExist(dataName).then(function(response){
-	            if (response.records.length > 0) {
-	               // Update existing resource
-	              console.debug('page exists... patching existing');
-	              var existingPage = response.records[0];
-	              force.request(
-	                {
-	                  method: 'PATCH',
-	                  contentType: 'application/json',
-	                  path: '/services/data/' + apiVersion + '/tooling/sobjects/ApexPage/' + existingPage.Id + '/',
-	                  data: {
-	                    'Markup' : dataParsed
-	                  },
-	                },
-	                function(response) {
-	                  resolve('Existing Cache manifest updated');
-	                },
-	                function(error) {
-	                  console.error(error);
-	                  reject({message :'Cache manifest upload failed. See console for details.', type: 'error'});
-	                }
-	              );
-	            } else {
-	              force.request(
-	                {
-	                  method: 'POST',
-	                  contentType: 'application/json',
-	                  path: '/services/data/' + apiVersion + '/tooling/sobjects/ApexPage/',
-	                  data: {
-	                    'Name': dataName,
-	                    'MasterLabel': dataName,
-	                    'Markup' : dataParsed
-	                  }
-	                },
-	                function(response) {
-	                  resolve('Cache manifest uploaded');
-	                },
-	                function(error) {
-	                  console.error(error);
-	                  reject({message :'Cache manifest upload failed. See console for details.', type: 'error'});
-	                }
-	              );
+						var pageOptions = JSON.stringify({
+							"function":"createApexPage",
+							"pageApiName":dataName,
+							"pageLabel":dataName,
+							"pageContents":dataParsed,
+							"apiVersion":apiVersionInt,
+							"pageDescription":"MobileCaddy CachePage" });
+	          force.request(
+	            {
+	              method: 'POST',
+								path:"/services/apexrest/mobilecaddy1/PlatformDevUtilsR001",
+								contentType:"application/json",
+								data:{startPageControllerVersion:'001', jsonParams:pageOptions}
+	            },
+	            function(response) {
+	            	// we will get a response like this, is it fails
+	            	// "{\"errorMessage\":\"Create Apex Page exception: Error occured processing component ShellAppCache_001. That page name is already in use, please choose a different one. (DUPLICATE_DEVELOPER_NAME). Fields Name.\",\"errorNo\":49}"
+	            	var respJson = JSON.parse(response);
+	            	if (respJson.errorMessage == "success") {
+	              	resolve('Cache manifest uploaded');
+	              } else {
+		            	respJson.message = respJson.errorMessage;
+		            	respJson.type = "error";
+	              	console.error(respJson);
+	              	reject(respJson);
+	              }
+	            },
+	            function(error) {
+	              console.error(error);
+	              reject({message :'Start page upload failed. See console for details.', type: 'error'});
 	            }
-	        });
+	          );
+    			});
 	      }, 30);
-	    });
 	    });
 	  }
 
@@ -372,30 +360,36 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
 	          var dataParsed = data.replace(/MC_UTILS_RESOURCE/g, appConfig.mc_utils_resource);
 	          dataParsed = dataParsed.replace(/MY_APP_RESOURCE/g, appConfig.sf_app_name + '_' + appConfig.sf_app_vsn);
 	          dataParsed = dataParsed.replace(/MY_APP_CACHE_RESOURCE/g, appConfig.sf_app_name + 'Cache_' + appConfig.sf_app_vsn);
+
+
+						var pageOptions = JSON.stringify({
+							"function":"createApexPage",
+							"pageApiName":dataName,
+							"pageLabel":dataName,
+							"pageContents":dataParsed,
+							"apiVersion":apiVersionInt,
+							"pageDescription":"MobileCaddy StartPage" });
 	          force.request(
 	            {
 	              method: 'POST',
-	              contentType: 'application/json',
-	              path: '/services/data/' + apiVersion + '/tooling/sobjects/ApexPage/',
-	              data: {
-	                'Name': dataName,
-	                'ControllerType' : '3',
-	                'MasterLabel': dataName,
-	                'Markup' : dataParsed
-	              }
+								path:"/services/apexrest/mobilecaddy1/PlatformDevUtilsR001",
+								contentType:"application/json",
+								data:{startPageControllerVersion:'001', jsonParams:pageOptions}
 	            },
 	            function(response) {
-	              resolve('Start page uploaded');
+	            	var respJson = JSON.parse(response);
+	            	if (respJson.errorMessage == "success") {
+	              	resolve('Start page uploaded');
+	              } else {
+		            	respJson.message = respJson.errorMessage;
+		            	respJson.type = "error";
+	              	console.error(respJson);
+	              	reject(respJson);
+	              }
 	            },
 	            function(error) {
 	              console.error(error);
-	              doesPageExist(dataName).then(function(response){
-	                if (response.records.length > 0) {
-	                  reject({message :'Start page already exists. Not updated.', type : 'info'});
-	                } else {
-	                  reject({message :'Start page upload failed. See console for details.', type: 'error'});
-	                }
-	              });
+	              reject({message :'Start page upload failed. See console for details.', type: 'error'});
 	            }
 	          );
 	        });
@@ -588,6 +582,237 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
 
 })();
 /**
+ * LocalNotificationService
+ *
+ * @description Enables device local notifications using Cordova Local-Notification Plugin
+ *              (https://github.com/katzer/cordova-plugin-local-notifications)
+ */
+(function() {
+  'use strict';
+
+  angular
+    .module('starter.services')
+    .factory('LocalNotificationService', LocalNotificationService);
+
+  LocalNotificationService.$inject = ['$cordovaLocalNotification', '$cordovaNetwork', 'devUtils', 'logger'];
+
+  function LocalNotificationService($cordovaLocalNotification, $cordovaNetwork, devUtils, logger) {
+
+    var lnDefaultTimeout = 600,  // 5 minutes
+        lnDefaultId      = 100100,
+        lnDefaultMsg     = 'Unsynced records';
+
+    return {
+      cancelNotification: cancelNotification,
+
+      setLocalNotification: setLocalNotification,
+
+      handleLocalNotification: handleLocalNotification,
+
+      handleLocalNotificationClick: handleLocalNotificationClick,
+
+      getLocalNotificationState: getLocalNotificationState,
+
+      setLocalNotificationState: setLocalNotificationState
+    };
+
+
+    /**
+     * @function cancelNotification
+     * @description Attempts to cancel the localNotifcation with a certain id
+     * @param  {string | number | undefined} id
+     */
+    function cancelNotification(id) {
+      return new Promise(function(resolve, reject) {
+        id =  (id) ? id : lnDefaultId;
+        if (getLocalNotificationState() == "disabled") {
+          logger.log('cancelNotification NotificationState disabled');
+          resolve();
+        } else {
+          logger.log('cancelNotification', id);
+          if (cordova && cordova.plugins && cordova.plugins.notification) {
+            $cordovaLocalNotification.cancel(id).then(function (result) {
+              logger.log('localNotification cancelled if it existed', id, result);
+              resolve(result);
+            });
+          }
+        }
+    });
+    }
+
+    /**
+     * @function setLocalNotification
+     * @description Sets a localNotification for id
+     * @param {string | number | undefined} id
+     * @param {integer | undefined} secsTillNotify - number of seconds till notification
+     * @param {string | undefined} msg
+     */
+    function setLocalNotification(id, secsTillNotify, msg) {
+      return new Promise(function(resolve, reject) {
+        if (getLocalNotificationState() == "disabled") {
+          logger.log('setLocalNotification NotificationState disabled');
+          resolve('ok');
+        } else {
+          // Set to defaults if needed
+          id =  (id) ? id : lnDefaultId;
+          secsTillNotify =  (secsTillNotify) ? secsTillNotify : lnDefaultTimeout;
+          msg =  (msg) ? msg : lnDefaultMsg;
+
+          logger.log('setLocalNotification id', id, secsTillNotify, msg );
+          devUtils.dirtyTables().then(function(tables){
+            if (tables && tables.length === 0 && id == lnDefaultId) {
+              // do nothing if no dirtyTables and using defeault ID (the used by SyncService)
+              logger.log('setLocalNotification no dirty tables', id);
+              resolve();
+            } else {
+              if (cordova && cordova.plugins && cordova.plugins.notification) {
+                var alarmTime = new Date();
+                alarmTime.setSeconds(alarmTime.getSeconds() + secsTillNotify);
+                logger.log('setLocalNotification alarmTime', alarmTime);
+                $cordovaLocalNotification.isScheduled(id).then(function(isScheduled) {
+                  logger.log('setLocalNotification isScheduled', isScheduled);
+                  if (isScheduled) {
+                    // update existing notification
+                    $cordovaLocalNotification.update({
+                      id: id,
+                      at: alarmTime,
+                    }).then(function (result) {
+                      logger.log("localNotification updated", id, result);
+                      resolve(result);
+                    });
+                  } else {
+                    // set a new notification
+                    var args = {
+                      id: id,
+                      at: alarmTime,
+                      text: msg,
+                      sound: null};
+                    if (device.platform == "Android") {
+                       args.ongoing = true;
+                       args.smallIcon = "res://icon";
+                    }
+                    $cordovaLocalNotification.schedule(args).then(function (result) {
+                      logger.log("localNotification has been set", id, result);
+                      resolve(result);
+                    });
+                  }
+                }).catch(function(err){
+                  logger.error("setLocalNotification", JSON.stringify(err));
+                  reject(err);
+                });
+              } else {
+                logger.log('setLocalNotification no cordova plugin');
+                resolve();
+              }
+            }
+          });
+        }
+      });
+    }
+
+    function handleLocalNotification(id, state) {
+      return new Promise(function(resolve, reject) {
+        if (getLocalNotificationState() == "disabled") {
+          logger.log('handleLocalNotification NotificationState disabled');
+          resolve();
+        } else {
+          logger.log('handleLocalNotification', id, state);
+          if (cordova && cordova.plugins && cordova.plugins.notification) {
+            if (id == lnDefaultId) { // lnDefaultId is used for our syncProcess
+              $cordovaLocalNotification.cancel(id, function(){});
+              devUtils.dirtyTables().then(function(tables){
+                //console.log('mc tables', tables);
+                if (tables && tables.length !== 0) {
+                  var isOnline = $cordovaNetwork.isOnline();
+                  logger.log('handleLocalNotification isOnline', isOnline);
+                  if (isOnline) {
+                    // take this opportunity to set our network status in case it's wrong
+                    localStorage.setItem('networkStatus', 'online');
+                    resolve();
+                    SyncService.syncAllTables();
+                  } else {
+                    // take this opportunity to set our network status in case it's wrong
+                    localStorage.setItem('networkStatus', 'offline');
+                    setLocalNotification(id).then(function(result){
+                      resolve(result);
+                    }).catch(function(e){
+                      reject(e);
+                    });
+                  }
+                } else {
+                  resolve();
+                }
+              });
+            } else {
+              resolve();
+            }
+          } else {
+            resolve();
+          }
+        }
+      });
+    }
+
+
+    function handleLocalNotificationClick(id, state) {
+      return new Promise(function(resolve, reject) {
+        if (getLocalNotificationState() == "disabled") {
+          logger.log('handleLocalNotification NotificationState disabled');
+          resolve();
+        } else {
+          logger.log('handleLocalNotification', id, state);
+          if (cordova && cordova.plugins && cordova.plugins.notification) {
+            if (id == lnDefaultId) { // lnDefaultId is used for our syncProcess
+              $cordovaLocalNotification.cancel(id, function(){});
+              devUtils.dirtyTables().then(function(tables){
+                //console.log('mc tables', tables);
+                if (tables && tables.length !== 0) {
+                  var isOnline = $cordovaNetwork.isOnline();
+                  logger.log('handleLocalNotification isOnline', isOnline);
+                  if (isOnline) {
+                    // take this opportunity to set our network status in case it's wrong
+                    localStorage.setItem('networkStatus', 'online');
+                    resolve();
+                  } else {
+                    // take this opportunity to set our network status in case it's wrong
+                    localStorage.setItem('networkStatus', 'offline');
+                    setLocalNotification(id).then(function(result){
+                      resolve(result);
+                    }).catch(function(e){
+                      reject(e);
+                    });
+                  }
+                } else {
+                  resolve();
+                }
+              });
+            } else {
+              resolve();
+            }
+          } else {
+            resolve();
+          }
+        }
+      });
+    }
+
+    function getLocalNotificationState() {
+      var localNotificationState = localStorage.getItem("localNotificationState");
+      if (localNotificationState === null) {
+        localNotificationState = "enabled";
+        localStorage.setItem("localNotificationState", localNotificationState);
+      }
+      return localNotificationState;
+    }
+
+    function setLocalNotificationState(status) {
+      localStorage.setItem("localNotificationState", status);
+    }
+
+  }
+
+})();
+/**
  * Network Factory
  *
  * @description Handles network events (online/offline) and kicks off tasks if needed
@@ -599,30 +824,437 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
     .module('starter.services')
     .factory('NetworkService', NetworkService);
 
-  NetworkService.$inject = ['SyncService', 'logger'];
+  NetworkService.$inject = ['$rootScope', 'SyncService', 'logger'];
 
-  function NetworkService(SyncService, logger) {
+  function NetworkService($rootScope, SyncService, logger) {
   	return {
-	    networkEvent: function(status){
-	      var pastStatus = localStorage.getItem('networkStatus');
-	      if (status == "online" && pastStatus != status) {
-	        // You could put some actions in here that you want to take place when
-	        // your app regains connectivity. For example see the Mobile Seed Apps
-	        // If you don't need this then you can ignore this. e.g.
-	        // SyncService.syncTables(['Table_x__ap', 'Table_y__ap'], true);
-	      }
-	      localStorage.setItem('networkStatus', status);
-	      logger.log("NetworkService " + status);
-	      return true;
-	    }
+	    networkEvent: networkEvent,
+
+      getNetworkStatus: getNetworkStatus,
+
+      setNetworkStatus: setNetworkStatus
 	  };
+
+	  function networkEvent(status){
+      var pastStatus = localStorage.getItem('networkStatus');
+      if (status == "online" && pastStatus != status) {
+        // You could put some actions in here that you want to take place when
+        // your app regains connectivity. For example see the Mobile Seed Apps
+        // If you don't need this then you can ignore this. e.g.
+        // SyncService.syncTables(['Table_x__ap', 'Table_y__ap'], true);
+        //
+        // TODO (TH) Are we doing this, I've not looked at the flows at the time of writing?
+      }
+      if (pastStatus != status) {
+        $rootScope.$emit('networkState', {state : status});
+      }
+      localStorage.setItem('networkStatus', status);
+      logger.log("NetworkService " + status);
+      return true;
+    }
+
+   	function getNetworkStatus() {
+      return localStorage.getItem('networkStatus');
+    }
+
+    function setNetworkStatus(status) {
+	      localStorage.setItem('networkStatus', status);
+     }
+
+  }
+
+})();
+/**
+ * Outbox Factory
+ *
+ * @description Gets data for the Outbox menu option.
+ *
+ */
+(function() {
+  'use strict';
+
+  angular
+    .module('starter.services')
+    .factory('OutboxService', OutboxService);
+
+  OutboxService.$inject = ['devUtils', 'logger'];
+
+  function OutboxService(devUtils, logger) {
+
+    return {
+      getDirtyRecordsCount: getDirtyRecordsCount,
+      getDirtyRecords: getDirtyRecords
+    };
+
+    function getDirtyRecordsCount() {
+      return new Promise(function(resolve, reject) {
+        devUtils.readRecords('recsToSync', []).then(function(resObject) {
+          var records = _.chain(resObject.records)
+            .filter(function(el){
+                return (el.Mobile_Table_Name != "Connection_Session__mc" && el.Mobile_Table_Name != "Mobile_Log__mc") ? true : false;
+              })
+            .value();
+          resolve(records.length);
+        }).catch(function(resObject){
+          // console.error('getDirtyRecordsCount ', angular.toJson(resObject));
+          logger.error('getDirtyRecordsCount ' + angular.toJson(resObject));
+          reject(resObject);
+        });
+      });
+    }
+
+    function getDirtyRecords() {
+      return new Promise(function(resolve, reject) {
+        devUtils.readRecords('recsToSync', []).then(function(resObject) {
+          var records = _.chain(resObject.records)
+            .filter(function(el){
+                return (el.Mobile_Table_Name != "Connection_Session__mc" && el.Mobile_Table_Name != "Mobile_Log__mc") ? true : false;
+              })
+            .value();
+          resolve(records);
+        }).catch(function(resObject){
+          // console.error('getDirtyRecords ', angular.toJson(resObject));
+          logger.error('getDirtyRecords ' + angular.toJson(resObject));
+          reject(resObject);
+        });
+      });
+    }
+
   }
 
 })();
 /**
  * Sync Factory
  *
- * @description Handles Sync calls to the MobileCaddy API amd gets/sets app
+ * @description Handles Sync calls to the MobileCaddy API amd gets/sets sync state
+ *
+ */
+(function() {
+	'use strict';
+
+	angular
+		.module('starter.services')
+		.factory('SyncService', SyncService);
+
+	SyncService.$inject = ['$rootScope', 'devUtils', 'LocalNotificationService','UserService'];
+
+	function SyncService($rootScope, devUtils, LocalNotificationService, UserService) {
+
+		// Just a guess at the record age that is acceptable to be on the device
+		// Set as needed for your use case
+		var fourHours = 1000 * 60 * 60 * 4; // 4 hours in milliseconds
+
+		// This is where you put your list of tables that you want from the platform
+		var appTables = [
+			// {'Name': 'myDummyTable1__ap', 'syncWithoutLocalUpdates': true, 'maxTableAge' : fourHours},
+			// {'Name': 'myDummyTable2__ap', 'syncWithoutLocalUpdates': true, 'maxTableAge' : fourHours}
+		];
+
+		var appTablesSyncNow = [
+			// {'Name': 'myDummyTable1__ap', 'syncWithoutLocalUpdates': true, 'maxTableAge' : 0}
+		];
+
+
+		return {
+			appTables: appTables,
+
+			getSyncLock: getSyncLock,
+
+			setSyncLock: setSyncLock,
+
+			getSyncState: getSyncState,
+
+			setSyncState: setSyncState,
+
+			syncAllTables: syncAllTables,
+
+			syncAllTablesNow: syncAllTablesNow,
+
+			syncTables: syncTables,
+
+			initialSync: initialSync,
+
+			coldStartSync: coldStartSync,
+
+			pushTables: pushTables
+
+		};
+
+
+		/**
+		 * @function getSyncLock
+		 * @description gets syncLockName value from localStorage, or "false" if not set
+		 * @param {string | undefined} syncLockName
+		 * @return {string}
+		 */
+		function getSyncLock(syncLockName) {
+			if (!syncLockName) syncLockName = 'syncLock';
+			var syncLock = localStorage.getItem(syncLockName);
+			if (syncLock === null) {
+				syncLock = "false";
+				localStorage.setItem(syncLockName, syncLock);
+			}
+			return syncLock;
+		}
+
+
+		/**
+		 * @function setSyncLock
+		 * @description Sets syncLockName value in localStorage item
+		 * @param {string} syncLockName
+		 * @param {string} status
+		 */
+		function setSyncLock(syncLockName, status) {
+			if (!status) {
+				status = syncLockName;
+				syncLockName = 'syncLock';
+			}
+			localStorage.setItem(syncLockName, status);
+		}
+
+
+		/**
+		 * @function getSyncState
+		 * @description gets syncState from localStorage, or "complete" if not set
+		 * @return {string}
+		 */
+		function getSyncState() {
+			var syncState = localStorage.getItem("syncState");
+			if (syncState === null) {
+				syncState = "Complete";
+				localStorage.setItem("syncState", syncState);
+			}
+			return syncState;
+		}
+
+
+		/**
+		 * @function setSyncState
+		 * @description Sets syncState localStorage item
+		 * @param {string} status
+		 */
+		function setSyncState(status) {
+			localStorage.setItem("syncState", status);
+		}
+
+
+		/**
+		 * @function initialSync
+		 * @description Makes initialSync call for all (biz logic) tables
+		 * @return {promise}
+		 */
+		function initialSync() {
+			// return syn/cAllTables();
+			return new Promise(function(resolve, reject) {
+				setSyncState("syncing");
+				var initialTabArr = [];
+				appTables.forEach(function(el){
+					if (el.syncWithoutLocalUpdates) initialTabArr.push(el.Name);
+				});
+				//console.log('initialSync', initialTabArr);
+				devUtils.initialSync(initialTabArr).then(function(res){
+					UserService.setProcessDone("initialDataLoaded");
+					$rootScope.$emit('syncTables', {result : "InitialLoadComplete"});
+					setSyncState("Complete");
+					resolve();
+				}).catch(function(resObject){
+					// TODO LOGGER in MOCK FOR UNIT TEST
+					console.error('initialSync ',resObject);
+					reject(resObject);
+				});
+			});
+		}
+
+
+		/**
+		 * @function coldStartSync description
+		 * @description Calls iterative sync on all tables (Mobile_Log__mc first)
+		 * @return {promise}
+		 */
+		function coldStartSync() {
+			return new Promise(function(resolve, reject) {
+				//console.log("coldStartSync");
+				var myAppTables = [{'Name': 'Mobile_Log__mc', 'syncWithoutLocalUpdates': false, 'maxTableAge' : fourHours}].concat(appTables);
+				syncTables(myAppTables).then(function(resObject){
+					//console.log('coldStartSync', resObject);
+					resolve(resObject);
+				});
+				// IT ALWAYS RESOLVES
+				// }) .catch(function(resObject){
+				//     logger.warn('syncAllTables ',resObject);
+				//     reject(resObject);
+				// });
+			});
+		}
+
+
+		/**
+		 * @function syncAllTables description
+		 * @description Calls iterative sync on all tables (Mobile_Log__mc first)
+		 * @return {promise}
+		 */
+		function syncAllTables() {
+			return new Promise(function(resolve, reject) {
+				var myAppTables = appTables;
+				myAppTables.push({'Name': 'Mobile_Log__mc', 'syncWithoutLocalUpdates': false, 'maxTableAge' : fourHours});
+				syncTables(myAppTables).then(function(resObject){
+					//console.log('syncAllTables', resObject);
+					resolve(resObject);
+				});
+				// IT ALWAYS RESOLVES
+				// }) .catch(function(resObject){
+				//     logger.warn('syncAllTables ',resObject);
+				//     reject(resObject);
+				// });
+			});
+		}
+
+
+		/**
+		 * @function syncAllTablesNow
+		 * @description Calls iterative sync on all tables now
+		 * @return {promise}
+		 */
+		function syncAllTablesNow() {
+			return new Promise(function(resolve, reject) {
+				syncTables(appTablesSyncNow).then(function(resObject){
+					//console.log('syncAllTablesNow', resObject);
+					resolve(resObject);
+				});
+				// IT ALWAYS RESOLVES
+				// }) .catch(function(resObject){
+				//     logger.warn('syncAllTablesNow ',resObject);
+				//     reject(resObject);
+				// });
+			});
+		}
+
+
+		/**
+		 * @function syncTables
+		 * @description syncs tables to/from SFDC
+		 * @param  {object[]} - array of {Name, syncWithoutLocalUpdates, maxTableAge}
+		 */
+		function syncTables(tablesToSync){
+			return new Promise(function(resolve, reject) {
+				// TODO - put some local notification stuff in here.
+				doSyncTables(tablesToSync).then(function(res){
+					// console.log("syncTables", res);
+					$rootScope.$emit('syncTables', {result : "Complete"});
+					setSyncState("Complete");
+					// NOTE - Commented out for the time being - see TOPS-96
+					if (!res || res.status == 100999) {
+						LocalNotificationService.setLocalNotification();
+					} else {
+						LocalNotificationService.cancelNotification();
+					}
+					resolve(res);
+				});
+				// IT ALWAYS RESOLVES
+				// }).catch(function(e){
+				// 	logger.warn('syncTables', e);
+				// 	$rootScope.$emit('syncTables', {result : "Complete"});
+				//    setSyncState("Complete");
+				//    reject(e);
+				// });
+			});
+		}
+
+		/**
+		 * @description This is used to push a list of tables only if there are records waiting to be pushed
+		 * @param string[] Array of table names to be synced in order
+		 **/
+		function pushTables(tablesToPush) {
+			// Loop through the tables and build up an array of {Name, syncWithoutLocalUpdates, maxTableAge}
+			var tablesToSync = [];
+			tablesToPush.forEach(function(el){
+				tablesToSync.push({'Name':el, 'syncWithoutLocalUpdates':false, 'maxTableAge':0});
+			});
+			// console.log('tops tablesToSync ',tablesToSync);
+			return new Promise(function(resolve, reject) {
+				// TODO - put some local notification stuff in here.
+				doSyncTables(tablesToSync).then(function(res){
+					// console.log("syncTables", res);
+					$rootScope.$emit('syncTables', {result : "Complete"});
+					setSyncState("Complete");
+					// NOTE - Commented out for the time being - see TOPS-96
+					if (!res || res.status == 100999) {
+					 LocalNotificationService.setLocalNotification();
+					} else {
+					 LocalNotificationService.cancelNotification();
+					}
+					resolve(res);
+				});
+				// IT ALWAYS RESOLVES
+				// }).catch(function(e){
+				//  logger.warn('syncTables', e);
+				//  $rootScope.$emit('syncTables', {result : "Complete"});
+				//    setSyncState("Complete");
+				//    reject(e);
+				// });
+			});
+		}
+
+		function doSyncTables(tablesToSync){
+			// Check that we not syncLocked or have a sync in progress
+			var syncLock = getSyncLock();
+			var syncState = getSyncState();
+			if (syncLock == "true" || syncState == "syncing") {
+				return Promise.resolve({status:100999});
+			} else {
+				setSyncState("syncing");
+				$rootScope.$emit('syncTables', {result : "StartSync"});
+
+				var stopSyncing = false;
+				var sequence = Promise.resolve();
+
+				return tablesToSync.reduce(function(sequence, table){
+					if (typeof(table.maxTableAge) == "undefined") {
+						table.maxTableAge = (1000 * 60 * 1); // 3 minutes
+					}
+					return sequence.then(function(res) {
+						//console.log("doSyncTables inSequence", table, res, stopSyncing);
+						//$rootScope.$emit('syncTables', {result : "TableComplete " + table.Name});
+						if (!stopSyncing) {
+							return devUtils.syncMobileTable(table.Name, table.syncWithoutLocalUpdates, table.maxTableAge);
+						} else {
+							//console.log("skipping sync");
+							return {status:100999};
+						}
+					}).then(function(resObject){
+						switch (resObject.status) {
+							case devUtils.SYNC_NOK :
+							case devUtils.SYNC_ALREADY_IN_PROGRESS :
+								if (typeof(resObject.mc_add_status) == "undefined" || resObject.mc_add_status != "no-sync-no-updates") {
+									stopSyncing = true;
+									setSyncState("Complete");
+								}
+						}
+						$rootScope.$emit('syncTables', {table: table.Name, result : resObject.status});
+						return resObject;
+					}).catch(function(e){
+						//console.error('doSyncTables', e);
+						if (e.status != devUtils.SYNC_UNKONWN_TABLE) {
+							stopSyncing = true;
+							$rootScope.$emit('syncTables', {table: table.Name, result : e.status});
+							setSyncState("Complete");
+						}
+						return e;
+					});
+				}, Promise.resolve());
+
+			}
+		}
+
+
+	}
+
+})();
+
+/**
+ * User Factory
+ *
+ * @description User services: sets/gets current user id; sets/gets 'processes' local storage
  * sync status.
  */
 (function() {
@@ -630,114 +1262,70 @@ angular.module('starter.services', ['underscore', 'devUtils', 'vsnUtils', 'smart
 
   angular
     .module('starter.services')
-    .factory('SyncService', SyncService);
+    .factory('UserService', UserService);
 
-  SyncService.$inject = ['$rootScope', 'devUtils'];
+  UserService.$inject = ['devUtils', 'logger'];
 
-  function SyncService($rootScope, devUtils) {
+  function UserService(devUtils, logger) {
 
+    return {
+      getCurrentUserId: getCurrentUserId,
+      setCurrentUserId: setCurrentUserId,
+      hasDoneProcess: hasDoneProcess,
+      setProcessDone: setProcessDone,
+    };
 
-	  return {
-	    getSyncLock: function(syncLockName){
-	      var syncLock = localStorage.getItem(syncLockName);
-	      if (syncLock === null) {
-	        syncLock = "false";
-	        localStorage.setItem(syncLockName, syncLock);
-	      }
-	      //console.log("mc getSyncLock syncLock", syncLock);
-	      return syncLock;
-	    },
+    function getCurrentUserId() {
+      return new Promise(function(resolve, reject) {
+        var currentUserId = localStorage.getItem('currentUserId');
+        if (currentUserId !== null) {
+          resolve(currentUserId);
+        } else {
+          devUtils.getCurrentUserId().then(function(userId){
+            localStorage.setItem('currentUserId', userId);
+            resolve(userId);
+          }).catch(function(resObject){
+            logger.log('getCurrentUserId',resObject);
+            reject(resObject);
+          });
+        }
+      });
+    }
 
-	    setSyncLock: function(syncLockName, status){
-	      localStorage.setItem(syncLockName, status);
-	      //console.log("mc setSyncLock", syncLockName, status);
-	    },
+    function setCurrentUserId(userId) {
+      return new Promise(function(resolve, reject) {
+        localStorage.setItem('currentUserId', userId);
+        resolve(true);
+      });
+    }
 
-	    getSyncState: function(){
-	      var syncState = localStorage.getItem("syncState");
-	      if (syncState === null) {
-	        syncState = "Complete";
-	        localStorage.setItem("syncState", syncState);
-	      }
-	      //console.log("mc getSyncState syncState", syncState);
-	      return syncState;
-	    },
+    function hasDoneProcess(processName) {
+      return new Promise(function(resolve, reject) {
+        var processes = JSON.parse(localStorage.getItem('processes'));
+        if (processes === null) {
+          resolve(false);
+        } else {
+          if (processes[processName] == "true") {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }
+      });
+    }
 
-	    setSyncState: function(status){
-	      localStorage.setItem("syncState", status);
-	      //console.log("mc setSyncState", "syncState", status);
-	    },
-
-	    syncTables: syncTables
-	  };
-
-
-		function  syncTables(tablesToSync, syncWithoutLocalUpdates, maxTableAge) {
-	    if (typeof(maxTableAge) == "undefined") {
-	      maxTableAge = (1000 * 60 * 3); // 3 minutes
-	    }
-	    //console.log('syncTables syncWithoutLocalUpdates, maxTableAge',syncWithoutLocalUpdates,maxTableAge);
-	    $rootScope.$broadcast('syncTables', {result : "Sync"});
-
-	    var stopSyncing = false;
-	    var firstSync = true;
-	    var syncCount = 0;
-	    var sequence = Promise.resolve();
-	    var maxRecsPerCall = 50;
-
-	    tablesToSync.forEach(function(table){
-	      sequence = sequence.then(function() {
-	        syncCount ++;
-	        //console.log("syncTables",table,syncCount,maxRecsPerCall);
-	        if (stopSyncing) {
-	          return {status: "100999"};  // "100999" is not an official code (used to indicate stopping of sync)
-	        } else {
-	          //console.log("syncTables call syncMobileTable",table,syncWithoutLocalUpdates,maxTableAge,maxRecsPerCall);
-	          return devUtils.syncMobileTable(table, syncWithoutLocalUpdates, maxTableAge, maxRecsPerCall);
-	        }
-	      }).then(function(resObject) {
-	        //console.log('syncTables syncMobileTable result',angular.toJson(resObject),firstSync,syncCount);
-	        if (typeof(resObject.status) != "undefined" && resObject.status != "100400") {
-	          if (resObject.status != "100999") {
-	            // We haven't stopped the sync
-	            if (resObject.status == "100497" ||
-	                resObject.status == "100498" ||
-	                resObject.status == "100402" ||
-	                (typeof(resObject.mc_add_status) != "undefined" && resObject.mc_add_status == "sync-too-soon")) {
-	              // "100497" => table is too young (synced recently) -> break out of any further syncing attempts
-	              // "100498" => sync already in progress
-	              // "100402" => error (e.g. offline, timeout)
-	              // We stop syncing if the first sync has a problem
-	              if (firstSync) {
-	                stopSyncing = true;
-	                $rootScope.$broadcast('syncTables', {result : resObject.status});
-	              }
-	            }
-	            // Unable to sync -> set a local notification?
-	          }
-	        } else {
-	          // Successful sync -> cancel any local notifications?
-	        }
-	        if (syncCount == tablesToSync.length && !stopSyncing) {
-	          // All syncs complete
-	          $rootScope.$broadcast('syncTables', {result : "Complete"});
-	        }
-	        firstSync = false;
-	      }).catch(function(res){
-	        if (typeof(res.status) != "undefined" &&
-	             (res.status == "100497" ||
-	              res.status == "100498" ||
-	              res.status == "100402")) {
-	          //console.log(res);
-	          $rootScope.$broadcast('syncTables', {result : "Complete"});
-	        } else {
-	          console.error(res);
-	          $rootScope.$broadcast('syncTables', {result : "Error"});
-	        }
-	        // Unable to sync -> set a local notification?
-	      });
-	    });
-	  }
+    function setProcessDone(processName) {
+      return new Promise(function(resolve, reject) {
+        logger.log('setProcessDone',processName);
+        var processes = JSON.parse(localStorage.getItem('processes'));
+        if (processes === null) {
+          processes = {};
+        }
+        processes[processName] = "true";
+        localStorage.setItem('processes', JSON.stringify(processes));
+        resolve(true);
+      });
+    }
 
   }
 

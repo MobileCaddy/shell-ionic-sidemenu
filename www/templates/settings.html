@@ -88,5 +88,18 @@
       </div>
     </form>
 	</div>
+
+
+    <div class="card">
+        <button class="button button-block button-positive icon-right ion-loop" ng-click="syncNow()">
+            <b>Sync Now</b>
+        </button>
+    </div>
+
+    <div class="card">
+        <button class="button button-block button-positive icon-right" ui-sref="app.outbox">
+            <b>Outbox{{outboxCount}}</b>
+        </button>
+    </div>
   </ion-content>
 </ion-view>
