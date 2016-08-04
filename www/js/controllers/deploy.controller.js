@@ -32,6 +32,8 @@
 	  DeployService.getDetails().then(function(data){
 	    console.log('data', data);
 	    appConfig = data;
+	    return DeployService.checkVsn(appConfig.min_mobilecaddy_version);
+	  }).then(function(){
 	    return DeployService.deployBunlde(appConfig);
 	  }).then(function(res){
 	    console.dir(res);
