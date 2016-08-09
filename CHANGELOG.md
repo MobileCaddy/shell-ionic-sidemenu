@@ -1,3 +1,28 @@
+### 1.2.0 (2016-XX-XX)
+
+
+#### Bug Fixes
+
+* NONE
+
+#### Features
+
+* Min npm of v3.
+* Updated sync service including icon in nav bar.
+* Inclusion of localNotifications out of the box.
+* Inclusion of Sync Now to Settings page.
+* Added Outbox to Settings page.
+* Use of $broadcast, not $emit for syncState - reduces use if $rootScope in controllers
+* Ionic vsn bump.
+* Added unit tests.
+* Improved Deploy process - removed the need for manual Visualforce page modification.
+* Added check for "minimum supported version" of MobileCaddy package on the platform.
+* Unit test code coverage
+
+#### Breaking Changes
+
+* NONE
+
 ### 1.1.2 (2016-06-15)
 
 

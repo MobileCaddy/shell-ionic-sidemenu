@@ -7,7 +7,7 @@ This is the basic side menu shell application built with [Angular JS](https://an
 ## Getting Started
 
 * Get the code and the supporting node and packages. The following depencies are needed (For detailed instructions see the [Getting Started Guide](http://developer.mobilecaddy.net/docs));
- * npm
+ * npm (Version 3+ is supported by default  - See the [guides](http://developer.mobilecaddy.net/docs) for assitance with lower versions)
  * grunt-cli
  * ruby
  * sass
