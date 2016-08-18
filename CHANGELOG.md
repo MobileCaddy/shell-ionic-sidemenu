@@ -1,4 +1,20 @@
-### 1.2.0 (2016-XX-XX)
+### 1.2.1 (2016-08-17)
+
+
+#### Bug Fixes
+
+* NONE
+
+#### Features
+
+* Dep bounce of most packages - needed to support conflict with NPM 6.3.1 and phantomjs.
+
+#### Breaking Changes
+
+* NONE
+
+
+### 1.2.0 (2016-04-27)
 
 
 #### Bug Fixes
