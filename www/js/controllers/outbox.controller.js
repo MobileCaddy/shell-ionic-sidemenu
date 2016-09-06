@@ -16,7 +16,6 @@
     logger.log("in OutboxCtrl");
 
     var outboxControllerViewModel = this;
-    var updateOutboxCountTimeout;
 
     outboxControllerViewModel.dirtyRecordExist = false;
     outboxControllerViewModel.syncing = false;
@@ -47,10 +46,6 @@
           outboxControllerViewModel.dirtyRecordExist = true;
         }
         $ionicLoading.hide();
-        updateOutboxCountTimeout = $timeout(function() {
-          // Update the outbox count displayed in the side menu (updated in MenuCtrl)
-          $rootScope.$emit('MenuCtrl:updateOutboxCount');
-        },0);
       });
     }
 
@@ -86,7 +81,7 @@
     // Run the sync method in the MenuCtrl
     function syncNow() {
       if (NetworkService.getNetworkStatus() === "online") {
-        $rootScope.$emit('MenuCtrl:syncNow');
+        SyncService.syncAllTablesNow();
         outboxControllerViewModel.syncing = true;
       } else {
         outboxControllerViewModel.syncing = false;
@@ -113,7 +108,6 @@
     $scope.$on('$destroy', function() {
       logger.log("OutboxCtrl destroy");
       deregisterHandleSyncTables();
-      $timeout.cancel(updateOutboxCountTimeout);
     });
 
   }

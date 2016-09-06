@@ -84,7 +84,9 @@ angular.module('starter', ['ionic', 'ngIOS9UIWebViewPatch', 'starter.services', 
     .state('app', {
       url: "/app",
       abstract: true,
-      templateUrl: RESOURCE_ROOT +  'templates/menu.html'
+      templateUrl: RESOURCE_ROOT +  'templates/menu.html',
+      controller: 'MenuCtrl',
+      controllerAs: 'vm'
     })
 
     // the app home page

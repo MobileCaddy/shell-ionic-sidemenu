@@ -1,3 +1,19 @@
+### 1.3.0 (2016-09-06)
+
+
+#### Bug Fixes
+
+* Sync Now button in Outbox was not working
+
+#### Features
+
+* Added Outbox Count to Sidemenu
+
+#### Breaking Changes
+
+* NONE
+
+
 ### 1.2.1 (2016-08-17)
 
 
