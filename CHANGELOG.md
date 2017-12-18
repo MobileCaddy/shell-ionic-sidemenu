@@ -1,19 +1,22 @@
-### 1.8.0 (2017-09-05)
+### 1.8.0 (2017-12-18)
 
 
 #### Bug Fixes
 
-* NONE
+* Removing mcrest service from project. now should only be optionally imported
+* Removing analytics from diagnostics screen
 
 #### Features
 
 * Further values passed to platform when deploying, to aid version alignment
+* Use of headless chrome for unit tests
+* Use of env vars for `grunt karma` and CI testing, to ensure correct running/coverage output
+* Utils bump 1.4.2
+* Startpage listens for cache events and give some updates
 
 #### Breaking Changes
 
 * NONE
-
-
 
 ### 1.7.0 (2017-08-18)
 
